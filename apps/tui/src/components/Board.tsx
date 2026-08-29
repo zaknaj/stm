@@ -3,31 +3,42 @@ import {
 	UNIT_SYMBOLS,
 	boardPositionKey,
 	type BoardUnit,
+	type BoardPosition,
 	type UnitSide
 } from '@stm/game';
 import { StyledText, bold, fg, underline } from '@opentui/core';
 
 const FILE_LABELS = 'ABCDEFGH';
 const BORDER_COLOR = '#6e6a86';
+const HIGHLIGHT_BORDER_COLOR = '#f6c177';
 const ALLIED_COLOR = '#9ccfd8';
 const ENEMY_COLOR = '#eb6f92';
 const SUPERSCRIPT_DIGITS = ['', '¹', '²', '³', '⁴', '⁵'] as const;
 
 const TOP_LABELS = `    ${FILE_LABELS.split('').join('   ')}`;
-const TOP_BORDER = `  ┌${Array.from({ length: BOARD_SIZE }, () => '───').join('┬')}┐`;
 
 type BoardProps = {
 	units: readonly BoardUnit[];
+	selectedPosition?: BoardPosition | null;
 };
 
 function unitColor(side: UnitSide): string {
 	return side === 'allied' ? ALLIED_COLOR : ENEMY_COLOR;
 }
 
-function createBoardRow(rank: number, unitsByPosition: ReadonlyMap<string, BoardUnit>): StyledText {
-	const chunks = [fg(BORDER_COLOR)(`${rank + 1} │`)];
+function createBoardRow(
+	rank: number,
+	unitsByPosition: ReadonlyMap<string, BoardUnit>,
+	selectedPosition: BoardPosition | null
+): StyledText {
+	const firstEdgeSelected = selectedPosition?.file === 0 && selectedPosition.rank === rank;
+	const chunks = [
+		fg(BORDER_COLOR)(`${rank + 1} `),
+		firstEdgeSelected ? fg(HIGHLIGHT_BORDER_COLOR)('║') : fg(BORDER_COLOR)('│')
+	];
 
 	for (let file = 0; file < BOARD_SIZE; file += 1) {
+		const selected = selectedPosition?.file === file && selectedPosition.rank === rank;
 		const unit = unitsByPosition.get(boardPositionKey({ file, rank }));
 		if (!unit) {
 			chunks.push(fg(BORDER_COLOR)('   '));
@@ -44,28 +55,52 @@ function createBoardRow(rank: number, unitsByPosition: ReadonlyMap<string, Board
 			);
 			chunks.push(bold(fg(foreground)(' ')));
 		}
-		chunks.push(fg(BORDER_COLOR)('│'));
+		const nextEdgeSelected = selectedPosition?.file === file + 1 && selectedPosition.rank === rank;
+		chunks.push(
+			selected || nextEdgeSelected
+				? fg(HIGHLIGHT_BORDER_COLOR)('║')
+				: fg(BORDER_COLOR)('│')
+		);
 	}
 
+	return new StyledText(chunks);
+}
+
+function createTopBorder(selectedPosition: BoardPosition | null): StyledText {
+	const chunks = [fg(BORDER_COLOR)('  ┌')];
+
+	for (let file = 0; file < BOARD_SIZE; file += 1) {
+		const selected = selectedPosition?.file === file && selectedPosition.rank === BOARD_SIZE - 1;
+		chunks.push(selected ? fg(HIGHLIGHT_BORDER_COLOR)('═══') : fg(BORDER_COLOR)('───'));
+		if (file < BOARD_SIZE - 1) {
+			chunks.push(fg(BORDER_COLOR)('┬'));
+		}
+	}
+
+	chunks.push(fg(BORDER_COLOR)('┐'));
 	return new StyledText(chunks);
 }
 
 function createBottomBorder(
 	rank: number,
 	unitsByPosition: ReadonlyMap<string, BoardUnit>,
-	isFinal: boolean
+	isFinal: boolean,
+	selectedPosition: BoardPosition | null
 ): StyledText {
 	const chunks = [fg(BORDER_COLOR)(isFinal ? '  └' : '  ├')];
 
 	for (let file = 0; file < BOARD_SIZE; file += 1) {
 		const unit = unitsByPosition.get(boardPositionKey({ file, rank }));
+		const selected =
+			selectedPosition?.file === file &&
+			(selectedPosition.rank === rank || selectedPosition.rank === rank - 1);
 		if (unit?.displayNumber) {
 			const superscript = SUPERSCRIPT_DIGITS[unit.displayNumber];
-			chunks.push(fg(BORDER_COLOR)('─'));
-			chunks.push(fg(unitColor(unit.side))(superscript));
-			chunks.push(fg(BORDER_COLOR)('─'));
+			chunks.push(selected ? fg(HIGHLIGHT_BORDER_COLOR)('═') : fg(BORDER_COLOR)('─'));
+			chunks.push(selected ? bold(fg(unitColor(unit.side))(superscript)) : fg(unitColor(unit.side))(superscript));
+			chunks.push(selected ? fg(HIGHLIGHT_BORDER_COLOR)('═') : fg(BORDER_COLOR)('─'));
 		} else {
-			chunks.push(fg(BORDER_COLOR)('───'));
+			chunks.push(selected ? fg(HIGHLIGHT_BORDER_COLOR)('═══') : fg(BORDER_COLOR)('───'));
 		}
 		if (file < BOARD_SIZE - 1) {
 			chunks.push(fg(BORDER_COLOR)(isFinal ? '┴' : '┼'));
@@ -76,7 +111,7 @@ function createBottomBorder(
 	return new StyledText(chunks);
 }
 
-export function Board({ units }: BoardProps) {
+export function Board({ units, selectedPosition = null }: BoardProps) {
 	const unitsByPosition = new Map(
 		units.map((unit) => [boardPositionKey(unit.position), unit] as const)
 	);
@@ -85,12 +120,17 @@ export function Board({ units }: BoardProps) {
 	return (
 		<box style={{ flexDirection: 'column', height: 18, width: 35 }}>
 			<text fg={BORDER_COLOR}>{TOP_LABELS}</text>
-			<text fg={BORDER_COLOR}>{TOP_BORDER}</text>
+			<text content={createTopBorder(selectedPosition)} />
 			{ranks.flatMap((rank, index) => [
-				<text key={`${rank}-row`} content={createBoardRow(rank, unitsByPosition)} />,
+				<text key={`${rank}-row`} content={createBoardRow(rank, unitsByPosition, selectedPosition)} />,
 				<text
 					key={`${rank}-border`}
-					content={createBottomBorder(rank, unitsByPosition, index === ranks.length - 1)}
+					content={createBottomBorder(
+						rank,
+						unitsByPosition,
+						index === ranks.length - 1,
+						selectedPosition
+					)}
 				/>
 			])}
 		</box>
