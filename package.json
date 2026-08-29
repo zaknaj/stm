@@ -1,0 +1,27 @@
+{
+	"name": "stm",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"packageManager": "pnpm@10.2.1",
+	"scripts": {
+		"stm": "pnpm --filter @stm/tui start",
+		"dev:tui": "pnpm --filter @stm/tui start",
+		"dev:web": "pnpm --filter @stm/web dev",
+		"dev:backend": "convex dev",
+		"build": "pnpm --recursive --if-present build",
+		"check": "pnpm --recursive --if-present check",
+		"test": "pnpm --recursive --if-present test"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
+	},
+	"dependencies": {
+		"convex": "^1.43.0"
+	},
+	"devDependencies": {
+		"typescript": "^6.0.3"
+	}
+}

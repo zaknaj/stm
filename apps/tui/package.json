@@ -1,0 +1,26 @@
+{
+	"name": "@stm/tui",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"bin": {
+		"stm": "./src/main.tsx"
+	},
+	"scripts": {
+		"start": "bun run ./src/main.tsx",
+		"build": "bun build --compile ./src/main.tsx --outfile ./dist/stm",
+		"check": "tsc --noEmit",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@opentui/core": "^0.5.9",
+		"@opentui/react": "^0.5.9",
+		"@stm/game": "workspace:*",
+		"react": "^19.2.8"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.4.0",
+		"@types/react": "^19.2.18",
+		"typescript": "^5.9.3"
+	}
+}
