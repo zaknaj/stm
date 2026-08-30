@@ -40,3 +40,9 @@ pnpm build
 ```
 
 The TUI build produces a standalone executable at `apps/tui/dist/stm`.
+
+## Documentation
+
+- [GAME.md](./GAME.md) describes the game, its objective, squads, and core rules.
+- [GAMEPLAY.md](./GAMEPLAY.md) defines the exact sequence and interface of an active match.
+- [ARCHITECTURE.md](./ARCHITECTURE.md) describes the underlying game-system architecture.

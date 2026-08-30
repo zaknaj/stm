@@ -1,6 +1,6 @@
 import { useKeyboard, useRenderer } from '@opentui/react';
 import { useState } from 'react';
-import { Board } from './components/Board.tsx';
+import { Board, createBoardText } from './components/Board.tsx';
 import { DEMO_UNITS } from './demoPosition.ts';
 import { moveSelection, type NavigationDirection } from './navigation.ts';
 
@@ -9,6 +9,11 @@ export function App() {
 	const [selectedPosition, setSelectedPosition] = useState<ReturnType<typeof moveSelection> | null>(null);
 
 	useKeyboard((key) => {
+		if (key.name === 'c' && (key.meta || key.super)) {
+			renderer.copyToClipboardOSC52(createBoardText(DEMO_UNITS, selectedPosition));
+			return;
+		}
+
 		if (key.name === 'q') {
 			renderer.destroy();
 			return;

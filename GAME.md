@@ -1,5 +1,7 @@
 # Slay the Monarch
 
+The exact flow and interface of an active match are documented in [GAMEPLAY.md](./GAMEPLAY.md). The underlying game-system design is documented in [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Overview
 
 *Slay the Monarch* is a turn-based, one-versus-one strategy game played on an 8×8 board. Each player controls a squad of units led by a monarch. The objective is to kill the opposing monarch.
@@ -13,6 +15,8 @@ The game draws inspiration from *Into the Breach*, *Slay the Spire*, *The Battle
 Each squad must contain exactly one monarch. A player wins immediately when the opposing monarch dies.
 
 Actions and effects resolve in order. If a monarch dies during a resolution, the game ends immediately, so both monarchs cannot die simultaneously.
+
+A player may also surrender, immediately giving the victory to their opponent. A match has no automatic draw, stalemate, turn limit, or time limit.
 
 ## Board and Units
 
@@ -40,17 +44,19 @@ A unit's selected spells belong to that individual unit. Multiple units of the s
 
 Monarchs do not have classes and cannot be customized. Each monarch is a distinct character with fixed HP and a fixed set of spells. A monarch's gold cost includes the entire unit and all of its spells.
 
-## Match Setup
+## Match Start and Deployment
 
-A match begins with a placement phase. Each player places the units in their squad within the two rows closest to their side of the board.
+The board begins empty, with every unit in both squads undeployed. Units enter the board through deployment during their player's turns. Deploying a unit costs one energy and places it on an empty cell within the two rows closest to that player's side of the board. A newly deployed unit may act immediately.
+
+Each player's first gameplay action must deploy their monarch. Until their monarch has been deployed, that player cannot take another gameplay action or end their turn.
 
 ## Turns and Energy
 
-Players take turns. Each player begins the match with zero energy and gains a fixed amount of energy at the start of each of their turns, including their first turn. Unspent energy carries over between turns and can be accumulated.
+Players take turns. Each player begins the match with zero energy and gains energy at the start of each of their turns. The opening turns use a staged energy schedule before settling at three energy per turn, as defined in [GAMEPLAY.md](./GAMEPLAY.md). Unspent energy carries over between turns without a cap.
 
-Energy belongs to the player and is shared by their entire squad. It represents how many actions the player can take. Every action is performed through a spell, and every spell costs one energy. Movement is also a spell and therefore costs one energy.
+Energy belongs to the player and is shared by their entire squad. It represents how many gameplay actions the player can take. Deploying a unit and casting a spell each cost one energy. Movement is performed through spells and therefore also costs one energy.
 
-During their turn, a player may act with any of their units in any order. The same unit may perform multiple actions, limited only by the player's available energy and the cooldowns of that unit's spells. A player may end their turn whenever they choose.
+During their turn, a player may act with any of their units in any order. The same unit may perform multiple actions, limited only by the player's available energy and the cooldowns of that unit's spells. After deploying their monarch, a player may end their turn whenever they choose.
 
 ## Spells and Cooldowns
 
