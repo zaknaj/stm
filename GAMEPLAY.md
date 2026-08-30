@@ -1,29 +1,22 @@
 # Match Gameplay
 
-## Scope
+This document describes the playable terminal version of *Slay the Monarch*. The rules are in [GAME.md](./GAME.md), and the current system structure is in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-This document describes what happens inside a match of *Slay the Monarch*: the sequence of play, the actions available to players, and the match interface through which those actions are taken.
+## Match Format
 
-The broader game description and squad rules are defined in [GAME.md](./GAME.md). The underlying system design is defined in [ARCHITECTURE.md](./ARCHITECTURE.md). This document is authoritative when either document refers to the exact sequence or interface of an active match.
+The game is played locally by two players sharing one terminal. Player 1 is always shown below the board and Player 2 above it. The whole board and both squads remain visible during every turn.
 
-## Match Start
+Player 1 takes the first turn. The board begins empty, and each player's first action must deploy their monarch.
 
-Before play begins, the game determines which participant is Player 1 and which is Player 2. Player 1 takes the first turn.
+## Turn Start
 
-The board begins empty. Each player's first gameplay action must be placing their monarch. Until a player places their monarch, they cannot perform another gameplay action or end their turn.
-
-## Turns and Energy
-
-Players alternate turns. At the start of a turn, the following steps occur in order:
+At the start of a turn:
 
 1. The active player gains energy.
-2. The active player's spell cooldowns advance.
-3. Start-of-turn effects resolve.
-4. The active player receives control.
+2. That player's positive spell cooldowns decrease by 1.
+3. The active player receives control.
 
-If a monarch dies while start-of-turn effects are resolving, the match ends immediately without giving the active player control.
-
-The opening energy schedule is:
+The energy schedule is:
 
 | Turn | Energy gained |
 | --- | ---: |
@@ -31,105 +24,59 @@ The opening energy schedule is:
 | Player 2's first turn | 2 |
 | Player 1's second turn | 2 |
 | Player 2's second turn | 3 |
-| Every subsequent player turn | 3 |
+| Every later player turn | 3 |
 
-Unspent energy is conserved between turns and there is no energy cap.
+Unspent energy carries over without a cap.
 
-Every energy-consuming gameplay action costs one energy. This includes deploying a unit and casting a spell. Interface actions do not cost energy.
+## Taking Actions
 
-Turns end only when the active player chooses and confirms **End Turn**. There is no turn timer. A player may end their turn with unspent energy, except before their mandatory monarch placement.
+The active player's squad is numbered in this order:
 
-After **End Turn** is confirmed, the interface returns to Game View before the next player's turn begins.
+1. Monarch
+2. Ranger
+3. Warrior
+4. Sorcerer
 
-## Deployment
+Pressing that number selects the unit. If it is undeployed, its valid deployment cells are highlighted. If it is deployed, its spells are shown and numbered.
 
-All units begin undeployed. A player may spend one energy to deploy any of their undeployed units during their turn.
+Selecting a spell highlights every valid destination or target. The player moves the cursor to a highlighted cell, selects it, and confirms the action. Nothing is spent before confirmation. After deployment or a spell, the same unit remains selected.
 
-A unit can be deployed onto any empty cell within the two rows closest to its player's side of the board. Deployment is available whenever the player has an undeployed unit, enough energy, and an empty valid deployment cell.
+An undeployed non-monarch cannot be selected for deployment until that player's monarch is on the board. A unit cannot cast spells until it has been deployed.
 
-A newly deployed unit may act immediately.
+## Ending a Turn
 
-Selecting an undeployed unit opens Cell/Unit View and highlights the cells on which that unit can be deployed. The player selects a destination and then either confirms or cancels. Energy is spent only on confirmation.
+The active player may end the turn after deploying their monarch. Ending the turn requires confirmation. The other player then gains their turn-start energy, their cooldowns decrease, and control passes to them.
 
-## Information and Inspection
+There is no minimum number of actions and no penalty for conserving energy.
 
-The match has perfect information. Both players can inspect both squads, including deployed and undeployed units, spells, HP, energy, cooldowns, and active effects.
+## Controls
 
-The inactive player may inspect cells, units, spells, effects, and the match log while waiting for their turn. They cannot perform gameplay actions.
+| Key | Action |
+| --- | --- |
+| Arrow keys | Move the board cursor. The cursor wraps at board edges. |
+| 1–4 | Select a unit. When a unit is selected, choose one of its spell slots. |
+| Enter | Select a cell or confirm an action. |
+| Space | Alternate Select/Confirm key. |
+| Escape | Cancel the current choice, then return to unit selection. |
+| E | End the turn. |
+| X | Surrender. |
+| Q | Quit the program. |
+| R | Start a new match after a win. |
 
-## Views
+The interface always shows both rosters, current HP, deployment locations, player energy, and the selected unit's spells and cooldowns. Blue dots mark valid cells. The line below the action prompt reports the most recent result or error.
 
-The match interface is composed of the player lines, the board, the Message Box, and the Text Area.
+## Resolution and Completion
 
-### Player Lines and Board
+Confirmed actions resolve immediately and deterministically. Damage cannot reduce HP below 0, and healing cannot raise HP above the unit's maximum.
 
-The enemy player's line appears above the board and the local player's line appears below it. Each line shows that player's name or handle and current energy. The active player's line is visually highlighted.
+When a non-monarch dies, it is removed from the board. When a monarch dies, the game ends immediately and announces the winner. Surrender also ends the game immediately.
 
-The board is presented between the two player lines from the local player's point of view.
+## Assumptions Used for This Version
 
-### Message Box
+The unanswered details needed for a playable version use these rules:
 
-The Message Box appears below the local player's line. It communicates what the player should do next and reports issues that prevent or invalidate an attempted interaction. For example, while deploying it can prompt the player to select a valid cell.
-
-When an action needs confirmation, the Message Box presents a title describing the pending action, such as **Place Monarch in B4?** or **Surrender game?**, together with **Confirm** and **Cancel** actions.
-
-Confirmation identifies the pending action and its selected inputs but does not preview calculated outcomes such as resulting HP, damage, movement, deaths, or applied effects.
-
-### Text Area
-
-The Text Area presents the remaining contextual text and the actions currently available to the player.
-
-### Game View
-
-Game View is the root match view. It presents both players' deployed and undeployed units and the board. It also provides match-level and interface actions, including **End Turn**, surrender, the match log, and settings where applicable.
-
-From Game View, a player can select a board cell, select an undeployed unit to begin deployment, or select an available match-level or interface action.
-
-### Cell/Unit View
-
-Selecting a board cell opens Cell/Unit View. This view presents:
-
-- The selected cell and any effects on it.
-- The cell's occupant, if any, including its stats and effects.
-- The occupant's spells.
-- Actions available from the selected cell or unit.
-
-Because a cell can contain at most one unit, the view has at most one occupant to present. An empty cell may simply be identified as empty; it does not require additional content.
-
-Effects display their remaining duration as a stack. The effect's name and a description of what it does are shown beneath it, in the style of effect descriptions in *Slay the Spire*.
-
-All of a unit's spells are shown. Spells that can currently be played are highlighted; other spells remain visible for inspection.
-
-**End Turn** is available from Cell/Unit View as well as Game View.
-
-### Spell View
-
-Selecting a spell opens Spell View. It shows the selected spell, its description, cost, and other relevant information. Its valid range is highlighted on the board relative to the unit casting it.
-
-If the spell requires inputs, the player selects them in sequence. After all inputs have been selected, the player reaches a final confirmation step.
-
-Confirming executes the spell, spends its energy, and applies its cooldown. Cancelling does not spend resources. After the spell resolves, the interface remains in Cell/Unit View focused on the selected cell.
-
-## Navigation and Commitment
-
-Gameplay interactions form a nested sequence of views and choices. At every step, the player can cancel or escape to return to the previous step, continuing backward until they reach Game View.
-
-Every consequential action ends with an explicit choice to confirm or cancel. This includes energy-consuming actions such as deployment and spell casting, as well as free actions such as **End Turn** and surrender. Ordinary interface navigation, such as opening the match log or settings, does not require confirmation.
-
-No energy, cooldown, unit, turn transition, surrender, or other consequence is committed before confirmation.
-
-## Keyboard Interaction
-
-The entire match interface must be operable with the keyboard. Every available action is displayed with its keyboard shortcut preceding its label.
-
-Arrow keys are reserved for navigating the board and selecting cells. Other actions use non-arrow keyboard shortcuts so that operating the interface does not interfere with board navigation.
-
-**Enter** is the universal Select/Confirm key. Its behavior follows the current interaction step: while navigating or targeting, it selects the focused cell; when a confirmation prompt is shown, it confirms the pending action.
-
-**Escape** is the universal Cancel/Back key. It cancels the current choice or returns to the previous interaction step until the player reaches Game View.
-
-## Match Duration and Completion
-
-There is no turn limit, automatic stalemate, or automatic draw. A match that is not surrendered continues indefinitely until a monarch dies.
-
-When a monarch dies, the opposing player wins immediately, as defined in [GAME.md](./GAME.md).
+- Deployment is visible and happens during normal turns rather than in a separate placement phase.
+- Player 2 receives the larger opening energy grants shown above to offset Player 1 acting first.
+- Walking uses orthogonal paths; general ranges and adjacency include diagonals.
+- Units block walking paths and Ranger shots, but not Sorcerer Blink.
+- The board orientation is fixed instead of rotating for the active player.

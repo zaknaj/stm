@@ -1,7 +1,8 @@
 # Slay the Monarch
 
-The project is a pnpm workspace with multiple clients sharing one game package
-and one Convex backend.
+A playable local, two-player terminal prototype of an 8×8 deterministic strategy game. Each player deploys a Monarch, Ranger, Warrior, and Sorcerer; spends energy on movement and combat spells; and wins by killing the enemy Monarch.
+
+The project is a pnpm workspace with multiple clients sharing one game package and one Convex backend.
 
 ```text
 apps/tui       OpenTUI terminal client
@@ -23,6 +24,8 @@ Open the terminal client:
 ```sh
 pnpm stm
 ```
+
+Use the arrow keys to move the cursor, number keys to select units and spells, Enter to select or confirm, Escape to go back, and E to end the turn.
 
 Start the web client or Convex backend:
 

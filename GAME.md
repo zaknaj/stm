@@ -1,84 +1,80 @@
 # Slay the Monarch
 
-The exact flow and interface of an active match are documented in [GAMEPLAY.md](./GAMEPLAY.md). The underlying game-system design is documented in [ARCHITECTURE.md](./ARCHITECTURE.md).
+The exact match flow and controls are described in [GAMEPLAY.md](./GAMEPLAY.md). The current game-system structure is described in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Overview
 
-*Slay the Monarch* is a turn-based, one-versus-one strategy game played on an 8×8 board. Each player controls a squad of units led by a monarch. The objective is to kill the opposing monarch.
+*Slay the Monarch* is a deterministic, turn-based strategy game for two players on an 8×8 board. Each player commands four units. The goal is to kill the enemy monarch.
 
-The game combines positional play with customizable units and spell-based actions. Combat is fully deterministic, with no hidden gameplay information: squad composition, spell loadouts, HP, energy, cooldowns, and active effects are visible to both players. The game is designed around small numbers and concise effects: the basic rules should be easy to understand, while squad building and interactions between spells, units, and the board create strategic depth and room for mastery.
+The game uses small numbers, short spell descriptions, and simple rules whose combinations create the strategy. It is inspired by *Into the Breach*, *Slay the Spire*, *The Battle of Polytopia*, and chess-like positional play.
 
-The game draws inspiration from *Into the Breach*, *Slay the Spire*, *The Battle of Polytopia*, and chess-like positional strategy.
+## Winning
 
-## Winning the Game
+A player wins immediately when the enemy monarch reaches 0 HP. Operations resolve in order, and the first monarch to die ends the match.
 
-Each squad must contain exactly one monarch. A player wins immediately when the opposing monarch dies.
-
-Actions and effects resolve in order. If a monarch dies during a resolution, the game ends immediately, so both monarchs cannot die simultaneously.
-
-A player may also surrender, immediately giving the victory to their opponent. A match has no automatic draw, stalemate, turn limit, or time limit.
+A player may also surrender. There are no draws, stalemates, turn limits, or timers.
 
 ## Board and Units
 
-The game is played on an 8×8 grid. Each cell can contain no more than one unit, and units cannot move through one another.
+Each cell can hold at most one unit. A unit at 0 HP dies and is removed from the board.
 
-A unit is any controllable game piece on the board that can move and perform actions. Units have health points (HP) and die when their HP reaches zero. Summoned pieces are also units.
+Each player has the same fixed squad:
 
-The board and its cells can carry effects, including features such as zones and portals. Damage and other outcomes can be influenced by effects on the caster, the target, and the cells involved.
+| Unit | HP | Spells |
+| --- | ---: | --- |
+| Monarch | 8 | Step, Strike |
+| Ranger | 4 | Stride, Shot |
+| Warrior | 7 | Step, Slash |
+| Sorcerer | 5 | Blink, Bolt, Mend |
 
-## Squads
+There is currently no squad building. All units and spells are predefined.
 
-Before entering a match, each player creates and manages squads. Both players build their squads using the same fixed gold budget.
+## Deployment
 
-Units and spells cost gold. A squad may contain up to 16 units, although the gold budget will usually result in squads of roughly three to six units. Unit classes and individual unit choices may be duplicated within a squad.
+The board starts empty. Units are deployed during normal turns, one at a time. Deployment costs 1 energy and places the unit on an empty cell in its player's nearest two rows.
 
-Every squad must include a monarch, whose cost comes from the same gold budget as the rest of the squad.
-
-### Classes and spells
-
-A class is a type of unit with its own pool of available spells. Purchasing a unit does not include any spells; spells are selected and purchased separately from that class's spell pool. A unit may be included in a squad without any selected spells. There is no fixed limit on the number of spells a unit can equip, but every selected spell counts against the squad's gold budget.
-
-Movement is not an innate action. Each class offers its own purchasable movement spell as part of its spell pool, and classes can have different movement capabilities. For example, a mobile class may be able to move two cells where a less mobile class's equivalently priced movement spell moves only one. A unit without a movement spell cannot move itself, although other spells and effects can still move it.
-
-A unit's selected spells belong to that individual unit. Multiple units of the same class may equip the same spell, but an individual unit cannot equip more than one copy of a spell.
-
-Monarchs do not have classes and cannot be customized. Each monarch is a distinct character with fixed HP and a fixed set of spells. A monarch's gold cost includes the entire unit and all of its spells.
-
-## Match Start and Deployment
-
-The board begins empty, with every unit in both squads undeployed. Units enter the board through deployment during their player's turns. Deploying a unit costs one energy and places it on an empty cell within the two rows closest to that player's side of the board. A newly deployed unit may act immediately.
-
-Each player's first gameplay action must deploy their monarch. Until their monarch has been deployed, that player cannot take another gameplay action or end their turn.
+Each player's first action must deploy their monarch. They cannot take another action or end their turn until they do. A newly deployed unit may act immediately.
 
 ## Turns and Energy
 
-Players take turns. Each player begins the match with zero energy and gains energy at the start of each of their turns. The opening turns use a staged energy schedule before settling at three energy per turn, as defined in [GAMEPLAY.md](./GAMEPLAY.md). Unspent energy carries over between turns without a cap.
+Players alternate turns, beginning with Player 1. Both players start with 0 energy and gain energy at the start of their turns according to the schedule in [GAMEPLAY.md](./GAMEPLAY.md). Unspent energy carries over without a cap.
 
-Energy belongs to the player and is shared by their entire squad. It represents how many gameplay actions the player can take. Deploying a unit and casting a spell each cost one energy. Movement is performed through spells and therefore also costs one energy.
+Energy belongs to the player and is shared by their squad. Deployment and every spell cost 1 energy. Movement is performed by spells and also costs 1 energy.
 
-During their turn, a player may act with any of their units in any order. The same unit may perform multiple actions, limited only by the player's available energy and the cooldowns of that unit's spells. After deploying their monarch, a player may end their turn whenever they choose.
+During a turn, the player may use their units in any order. A unit may act more than once if the player has enough energy and its chosen spell is ready. The player decides when to end the turn.
 
 ## Spells and Cooldowns
 
-Spells produce the game's actions and effects. They can affect units or cells, deal damage, move units, create persistent board effects, or summon other units.
+All spells begin ready. After a spell is cast, its cooldown is set to the listed value. At the start of the owning player's turns, each positive cooldown decreases by 1.
 
-Casting a spell has an input phase followed by an execution phase. During the input phase, the player makes every decision required by the spell before any of its effects occur. A spell may require a single choice or a sequence of choices, and each later choice may depend on the choices made before it.
+- **CD 0:** Can be used repeatedly, including in the same turn.
+- **CD 1:** Becomes ready on the unit's next turn.
+- **CD 2 or more:** Remains unavailable for additional turns.
 
-Every input asks the player to choose exactly one cell. Its shape defines the area in which that choice can be made, relative to an origin. One or more filters determine which cells in that shape are valid choices. Filters can consider properties such as occupancy, allegiance, visibility, unit or cell state, relationships to earlier inputs, and whether the input's range can be modified by game effects.
+Every spell selects one destination or target cell and resolves one effect:
 
-An input's origin may be the caster or a cell chosen by an earlier input, allowing one selection to determine the valid choices offered by the next.
+| Unit | Spell | CD | Effect |
+| --- | --- | ---: | --- |
+| Monarch | Step | 0 | Move 1 cell. |
+| Monarch | Strike | 1 | Deal 2 damage to an adjacent enemy. |
+| Ranger | Stride | 1 | Move up to 2 cells. |
+| Ranger | Shot | 0 | Deal 2 damage to an enemy up to 4 cells away in a clear straight or diagonal line. |
+| Warrior | Step | 0 | Move 1 cell. |
+| Warrior | Slash | 1 | Deal 3 damage to an adjacent enemy. |
+| Sorcerer | Blink | 2 | Teleport to an empty cell up to 2 cells away. |
+| Sorcerer | Bolt | 1 | Deal 2 damage to an enemy within 2 cells. |
+| Sorcerer | Mend | 3 | Restore up to 2 HP to a damaged ally within 2 cells, including the caster. |
 
-An input's range has a lower and an upper bound. Its upper bound may be unlimited, and its shape determines how that range is measured across the board. Unless the input has a filter that makes its range modifiable, its range remains fixed.
+## Spatial Rules
 
-After all required inputs have been collected, the player must confirm the spell. Only then does the spell enter its execution phase and resolve using those choices. Spells that require no variable target choices, including spells that target only their caster, still require confirmation before execution.
+Step and Stride use orthogonal movement. They cannot move through occupied cells, and their destination must be empty.
 
-Execution consists of one or more ordered operations. Each operation defines its own effect zone using the spell's chosen cells. An effect zone may consist of one chosen cell or may form an area, line, path, or other shape derived from one or more inputs. Different operations may derive different effect zones from the same input. The operation then affects the cells in its zone, their occupants, or relationships between referenced cells.
+Adjacency and “within” ranges use the larger of the horizontal and vertical distances, so diagonal cells count at the same distance as orthogonal cells.
 
-All spells begin the match ready to use. Each spell has a cooldown that limits how often it can be used. Cooldowns advance at the beginning of the owning player's turn:
+Blink ignores cells between its origin and destination. Shot travels horizontally, vertically, or diagonally, and any intervening unit blocks it.
 
-- A cooldown of 0 allows a spell to be replayed during the same turn, provided the player has enough energy.
-- A cooldown of 1 allows a spell to be used again on the unit's next turn.
-- Longer cooldowns keep a spell unavailable for the corresponding number of turns.
-- An infinite cooldown makes a spell usable only once per match.
+## Information and Commitment
 
-Spell behavior—including movement, targeting, range, damage, effects, and summoning—is defined by each individual spell.
+The complete game state is visible and combat has no randomness. Both players can see unit positions, HP, energy, and cooldowns.
+
+Choosing cells and browsing units does not change the match. Deployment, spells, ending the turn, and surrender must be confirmed before they take effect.

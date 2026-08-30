@@ -11,6 +11,7 @@ import { StyledText, bold, fg, underline } from '@opentui/core';
 const FILE_LABELS = 'ABCDEFGH';
 const BORDER_COLOR = '#6e6a86';
 const HIGHLIGHT_BORDER_COLOR = '#f6c177';
+const TARGET_COLOR = '#3e8fb0';
 const ALLIED_COLOR = '#9ccfd8';
 const ENEMY_COLOR = '#eb6f92';
 const SUBSCRIPT_DIGITS = ['', '₁', '₂', '₃', '₄', '₅'] as const;
@@ -18,6 +19,7 @@ const SUBSCRIPT_DIGITS = ['', '₁', '₂', '₃', '₄', '₅'] as const;
 type BoardProps = {
 	units: readonly BoardUnit[];
 	selectedPosition?: BoardPosition | null;
+	highlightedPositions?: readonly BoardPosition[];
 };
 
 type SelectedEdge = 'top' | 'bottom';
@@ -71,7 +73,8 @@ function createTopLabels(selectedPosition: BoardPosition | null): StyledText {
 function createBoardRow(
 	rank: number,
 	unitsByPosition: ReadonlyMap<string, BoardUnit>,
-	selectedPosition: BoardPosition | null
+	selectedPosition: BoardPosition | null,
+	highlightedPositions: ReadonlySet<string>
 ): StyledText {
 	const firstEdgeSelected = selectedPosition?.file === 0 && selectedPosition.rank === rank;
 	const chunks = [
@@ -84,13 +87,15 @@ function createBoardRow(
 
 	for (let file = 0; file < BOARD_SIZE; file += 1) {
 		const selected = selectedPosition?.file === file && selectedPosition.rank === rank;
-		const unit = unitsByPosition.get(boardPositionKey({ file, rank }));
+		const position = { file, rank };
+		const highlighted = highlightedPositions.has(boardPositionKey(position));
+		const unit = unitsByPosition.get(boardPositionKey(position));
 		if (!unit) {
-			chunks.push(fg(BORDER_COLOR)('   '));
+			chunks.push(fg(highlighted ? TARGET_COLOR : BORDER_COLOR)(highlighted ? ' · ' : '   '));
 		} else {
 			const foreground = unitColor(unit.side);
 			const symbol = UNIT_SYMBOLS[unit.kind];
-			chunks.push(bold(fg(foreground)(' ')));
+			chunks.push(bold(fg(highlighted ? TARGET_COLOR : foreground)(highlighted ? '·' : ' ')));
 			chunks.push(
 				bold(
 					unit.kind === 'monarch'
@@ -98,7 +103,7 @@ function createBoardRow(
 						: fg(foreground)(symbol)
 				)
 			);
-			chunks.push(bold(fg(foreground)(' ')));
+			chunks.push(bold(fg(highlighted ? TARGET_COLOR : foreground)(highlighted ? '·' : ' ')));
 		}
 		const nextEdgeSelected = selectedPosition?.file === file + 1 && selectedPosition.rank === rank;
 		chunks.push(
@@ -201,12 +206,14 @@ function createBottomBorder(
 
 function createBoardLines(
 	units: readonly BoardUnit[],
-	selectedPosition: BoardPosition | null
+	selectedPosition: BoardPosition | null,
+	highlightedPositions: readonly BoardPosition[]
 ): BoardLine[] {
 	const unitsByPosition = new Map(
 		units.map((unit) => [boardPositionKey(unit.position), unit] as const)
 	);
 	const ranks = Array.from({ length: BOARD_SIZE }, (_, index) => BOARD_SIZE - index - 1);
+	const highlightedKeys = new Set(highlightedPositions.map(boardPositionKey));
 
 	return [
 		{ key: 'labels', content: createTopLabels(selectedPosition) },
@@ -214,7 +221,7 @@ function createBoardLines(
 		...ranks.flatMap((rank, index) => [
 			{
 				key: `${rank}-row`,
-				content: createBoardRow(rank, unitsByPosition, selectedPosition)
+				content: createBoardRow(rank, unitsByPosition, selectedPosition, highlightedKeys)
 			},
 			{
 				key: `${rank}-border`,
@@ -231,15 +238,16 @@ function createBoardLines(
 
 export function createBoardText(
 	units: readonly BoardUnit[],
-	selectedPosition: BoardPosition | null = null
+	selectedPosition: BoardPosition | null = null,
+	highlightedPositions: readonly BoardPosition[] = []
 ): string {
-	return createBoardLines(units, selectedPosition)
+	return createBoardLines(units, selectedPosition, highlightedPositions)
 		.map(({ content }) => content.chunks.map((chunk) => chunk.text).join(''))
 		.join('\n');
 }
 
-export function Board({ units, selectedPosition = null }: BoardProps) {
-	const lines = createBoardLines(units, selectedPosition);
+export function Board({ units, selectedPosition = null, highlightedPositions = [] }: BoardProps) {
+	const lines = createBoardLines(units, selectedPosition, highlightedPositions);
 
 	return (
 		<box style={{ flexDirection: 'column', height: 18, width: 35 }}>

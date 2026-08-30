@@ -26,3 +26,20 @@ export type BoardUnit = {
 export function boardPositionKey(position: BoardPosition): string {
 	return `${position.file}:${position.rank}`;
 }
+
+export function isBoardPosition(position: BoardPosition): boolean {
+	return (
+		position.file >= 0 &&
+		position.file < BOARD_SIZE &&
+		position.rank >= 0 &&
+		position.rank < BOARD_SIZE
+	);
+}
+
+export function positionsEqual(left: BoardPosition, right: BoardPosition): boolean {
+	return left.file === right.file && left.rank === right.rank;
+}
+
+export function boardPositionLabel(position: BoardPosition): string {
+	return `${String.fromCharCode(65 + position.file)}${position.rank + 1}`;
+}
