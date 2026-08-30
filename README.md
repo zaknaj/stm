@@ -1,6 +1,6 @@
 # Slay the Monarch
 
-A playable local, two-player terminal prototype of an 8×8 deterministic strategy game. Each player deploys a Monarch, Ranger, Warrior, and Sorcerer; spends energy on movement and combat spells; and wins by killing the enemy Monarch.
+A playable online, two-player terminal prototype of an 8×8 deterministic strategy game. Each player deploys a Monarch, Ranger, Warrior, and Sorcerer; spends energy on movement and combat spells; and wins by killing the enemy Monarch.
 
 The project is a pnpm workspace with multiple clients sharing one game package and one Convex backend.
 
@@ -19,11 +19,19 @@ Install dependencies:
 pnpm install
 ```
 
-Open the terminal client:
+Start the configured Convex backend during local development:
+
+```sh
+pnpm dev:backend
+```
+
+Then open the terminal client in two terminals:
 
 ```sh
 pnpm stm
 ```
+
+The first client creates a game and waits. The second client automatically joins it; no game code or menu is required.
 
 Use the arrow keys to move the cursor, number keys to select units and spells, Enter to select or confirm, Escape to go back, and E to end the turn.
 

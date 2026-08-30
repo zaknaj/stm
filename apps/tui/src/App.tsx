@@ -2,10 +2,6 @@ import {
 	UNIT_DEFINITIONS,
 	boardPositionLabel,
 	canEndTurn,
-	castSpell,
-	createInitialMatch,
-	deployUnit,
-	endTurn,
 	getDeploymentCells,
 	getPlayerUnits,
 	getSpell,
@@ -13,31 +9,33 @@ import {
 	getUnitAt,
 	getValidSpellTargets,
 	positionsEqual,
-	surrender,
 	type BoardPosition,
 	type BoardUnit,
-	type MatchResult,
+	type MatchAction,
 	type MatchState,
 	type PlayerId,
 	type SpellDefinition,
 	type UnitState
 } from '@stm/game';
 import { useKeyboard, useRenderer } from '@opentui/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Board, createBoardText } from './components/Board.tsx';
 import { moveSelection, type NavigationDirection } from './navigation.ts';
-
-type PendingAction =
-	| { kind: 'cast'; unitId: string; spellId: string; target: BoardPosition }
-	| { kind: 'deploy'; unitId: string; target: BoardPosition }
-	| { kind: 'end-turn' }
-	| { kind: 'surrender' };
 
 type Interaction =
 	| { kind: 'browse' }
 	| { kind: 'deploy'; unitId: string }
 	| { kind: 'target'; unitId: string; spellId: string }
-	| { kind: 'confirm'; action: PendingAction };
+	| { kind: 'confirm'; action: MatchAction };
+
+type MatchAppProps = {
+	match: MatchState;
+	localPlayer: PlayerId;
+	onAction: (
+		action: MatchAction
+	) => Promise<{ ok: true; message: string } | { ok: false; error: string }>;
+	onRestart?: () => void;
+};
 
 const STARTING_CURSOR: BoardPosition = { file: 0, rank: 0 };
 
@@ -45,7 +43,7 @@ function playerLabel(player: PlayerId): string {
 	return player === 'player1' ? 'P1' : 'P2';
 }
 
-function asBoardUnits(state: MatchState): BoardUnit[] {
+function asBoardUnits(state: MatchState, localPlayer: PlayerId): BoardUnit[] {
 	return state.units
 		.filter((unit) => unit.hp > 0 && unit.position)
 		.map((unit) => ({
@@ -53,7 +51,7 @@ function asBoardUnits(state: MatchState): BoardUnit[] {
 			kind: unit.kind,
 			displayNumber: unit.displayNumber,
 			position: unit.position!,
-			side: unit.controller === 'player1' ? 'allied' : 'enemy'
+			side: unit.controller === localPlayer ? 'allied' : 'enemy'
 		}));
 }
 
@@ -79,7 +77,7 @@ function spellLine(unit: UnitState, spell: SpellDefinition, index: number): stri
 	return `${index + 1} ${spell.name} [${remaining === 0 ? 'ready' : `CD${remaining}`}] ${spell.summary}`;
 }
 
-function pendingLabel(state: MatchState, action: PendingAction): string {
+function pendingLabel(state: MatchState, action: MatchAction): string {
 	switch (action.kind) {
 		case 'deploy': {
 			const unit = getUnit(state, action.unitId)!;
@@ -114,14 +112,23 @@ function numberFromKey(name: string): number | null {
 	return /^[1-4]$/.test(name) ? Number(name) : null;
 }
 
-export function App() {
+export function MatchApp({ match, localPlayer, onAction, onRestart }: MatchAppProps) {
 	const renderer = useRenderer();
-	const [match, setMatch] = useState(createInitialMatch);
 	const [cursor, setCursor] = useState<BoardPosition>(STARTING_CURSOR);
 	const [interaction, setInteraction] = useState<Interaction>({ kind: 'browse' });
 	const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
-	const [message, setMessage] = useState('P1: deploy your Monarch.');
-	const boardUnits = useMemo(() => asBoardUnits(match), [match]);
+	const [message, setMessage] = useState(match.log.at(-1) ?? 'Deploy your Monarch.');
+	const [busy, setBusy] = useState(false);
+	const boardUnits = useMemo(() => asBoardUnits(match, localPlayer), [localPlayer, match]);
+
+	useEffect(() => {
+		setMessage(match.log.at(-1) ?? 'Deploy your Monarch.');
+	}, [match.log]);
+
+	useEffect(() => {
+		setInteraction({ kind: 'browse' });
+		setSelectedUnitId(null);
+	}, [localPlayer, match.activePlayer]);
 
 	const highlightedPositions = useMemo(() => {
 		if (interaction.kind === 'deploy') return getDeploymentCells(match, interaction.unitId);
@@ -131,30 +138,21 @@ export function App() {
 		return [];
 	}, [interaction, match]);
 
-	function acceptResult(result: MatchResult, nextSelectedUnitId: string | null): void {
-		if (!result.ok) {
-			setMessage(result.error);
-			return;
-		}
-		setMatch(result.state);
-		setInteraction({ kind: 'browse' });
-		setSelectedUnitId(nextSelectedUnitId);
-		setMessage(result.state.log.at(-1) ?? 'Done.');
-	}
-
-	function execute(action: PendingAction): void {
-		switch (action.kind) {
-			case 'deploy':
-				acceptResult(deployUnit(match, action.unitId, action.target), action.unitId);
+	async function execute(action: MatchAction): Promise<void> {
+		setBusy(true);
+		try {
+			const result = await onAction(action);
+			if (!result.ok) {
+				setMessage(result.error);
 				return;
-			case 'cast':
-				acceptResult(castSpell(match, action.unitId, action.spellId, action.target), action.unitId);
-				return;
-			case 'end-turn':
-				acceptResult(endTurn(match), null);
-				return;
-			case 'surrender':
-				acceptResult(surrender(match, match.activePlayer), null);
+			}
+			setInteraction({ kind: 'browse' });
+			setSelectedUnitId(action.kind === 'deploy' || action.kind === 'cast' ? action.unitId : null);
+			setMessage(result.message);
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : 'Could not send the action.');
+		} finally {
+			setBusy(false);
 		}
 	}
 
@@ -222,18 +220,13 @@ export function App() {
 			return;
 		}
 		if (match.status.kind === 'won') {
-			if (key.name === 'r') {
-				setMatch(createInitialMatch());
-				setCursor(STARTING_CURSOR);
-				setInteraction({ kind: 'browse' });
-				setSelectedUnitId(null);
-				setMessage('P1: deploy your Monarch.');
-			}
+			if (key.name === 'r') onRestart?.();
 			return;
 		}
+		if (busy) return;
 
 		if (interaction.kind === 'confirm') {
-			if (isConfirmKey(key.name, key.sequence)) execute(interaction.action);
+			if (isConfirmKey(key.name, key.sequence)) void execute(interaction.action);
 			else if (key.name === 'escape') {
 				const action = interaction.action;
 				setInteraction(
@@ -267,6 +260,18 @@ export function App() {
 			if (interaction.kind !== 'browse') setInteraction({ kind: 'browse' });
 			else setSelectedUnitId(null);
 			setMessage('Back.');
+			return;
+		}
+
+		if (match.activePlayer !== localPlayer) {
+			if (isConfirmKey(key.name, key.sequence)) {
+				const unit = getUnitAt(match, cursor);
+				setMessage(
+					unit
+						? `${UNIT_DEFINITIONS[unit.kind].name}: ${unit.hp}/${UNIT_DEFINITIONS[unit.kind].maxHp} HP.`
+						: `${boardPositionLabel(cursor)} is empty.`
+				);
+			}
 			return;
 		}
 
@@ -337,22 +342,30 @@ export function App() {
 	});
 
 	const selectedUnit = selectedUnitId ? getUnit(match, selectedUnitId) : undefined;
-	const prompt =
-		match.status.kind === 'won'
-			? `${match.players[match.status.winner].name} wins by ${match.status.reason}. [R] restart [Q] quit`
-			: interaction.kind === 'confirm'
-				? `${pendingLabel(match, interaction.action)} [Enter/Space] confirm [Esc] cancel`
-				: interaction.kind === 'deploy'
-					? 'Choose a highlighted cell. [Enter/Space] select [Esc] back'
-					: interaction.kind === 'target'
-						? 'Choose a highlighted target. [Enter/Space] select [Esc] back'
-						: selectedUnit
-							? 'Choose spell [1-3]. [Esc] units'
-							: 'Choose unit [1-4] or inspect with [Enter].';
+	let prompt: string;
+	if (match.status.kind === 'won') {
+		prompt = `${match.players[match.status.winner].name} wins by ${match.status.reason}. [R] restart [Q] quit`;
+	} else if (match.activePlayer !== localPlayer) {
+		prompt = `Waiting for ${playerLabel(match.activePlayer)}. Arrows/Enter inspect.`;
+	} else if (busy) {
+		prompt = 'Sending action...';
+	} else if (interaction.kind === 'confirm') {
+		prompt = `${pendingLabel(match, interaction.action)} [Enter/Space] confirm [Esc] cancel`;
+	} else if (interaction.kind === 'deploy') {
+		prompt = 'Choose a highlighted cell. [Enter/Space] select [Esc] back';
+	} else if (interaction.kind === 'target') {
+		prompt = 'Choose a highlighted target. [Enter/Space] select [Esc] back';
+	} else if (selectedUnit) {
+		prompt = 'Choose spell [1-3]. [Esc] units';
+	} else {
+		prompt = 'Choose unit [1-4] or inspect with [Enter].';
+	}
 
 	return (
 		<box style={{ alignItems: 'center', flexDirection: 'column', height: '100%', width: '100%' }}>
-			<text>SLAY THE MONARCH  Turn {match.turnNumber}</text>
+			<text>
+				SLAY THE MONARCH  Turn {match.turnNumber}  You are {playerLabel(localPlayer)}
+			</text>
 			<text>{rosterLine(match, 'player2')}</text>
 			<Board units={boardUnits} selectedPosition={cursor} highlightedPositions={highlightedPositions} />
 			<text>{rosterLine(match, 'player1')}</text>

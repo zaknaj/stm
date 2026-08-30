@@ -106,6 +106,12 @@ export type MatchResult =
 	| { ok: true; state: MatchState }
 	| { ok: false; error: string };
 
+export type MatchAction =
+	| { kind: 'cast'; unitId: string; spellId: string; target: BoardPosition }
+	| { kind: 'deploy'; unitId: string; target: BoardPosition }
+	| { kind: 'end-turn' }
+	| { kind: 'surrender' };
+
 const PLAYER_IDS = ['player1', 'player2'] as const;
 const ORTHOGONAL_STEPS = [
 	{ file: 1, rank: 0 },
@@ -454,4 +460,22 @@ export function surrender(state: MatchState, player: PlayerId): MatchResult {
 	next.status = { kind: 'won', winner, reason: 'surrender' };
 	appendLog(next, `${next.players[player].name} surrenders. ${next.players[winner].name} wins.`);
 	return { ok: true, state: next };
+}
+
+export function applyMatchAction(
+	state: MatchState,
+	player: PlayerId,
+	action: MatchAction
+): MatchResult {
+	if (state.activePlayer !== player) return { ok: false, error: 'It is not your turn.' };
+	switch (action.kind) {
+		case 'deploy':
+			return deployUnit(state, action.unitId, action.target);
+		case 'cast':
+			return castSpell(state, action.unitId, action.spellId, action.target);
+		case 'end-turn':
+			return endTurn(state);
+		case 'surrender':
+			return surrender(state, player);
+	}
 }

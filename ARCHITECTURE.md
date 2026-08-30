@@ -5,7 +5,7 @@ This document describes the system used by the current playable version. It comp
 ## Principles
 
 - The game is deterministic: the same state and confirmed action always produce the same result.
-- Game rules are independent from the terminal interface.
+- Game rules are independent from the terminal interface and backend transport.
 - Browsing and target selection are read-only.
 - A confirmed action is validated again before changing the match.
 - Rule functions return a new match state instead of altering the previous one.
@@ -35,6 +35,14 @@ The terminal interface has four interaction states:
 4. **Confirm:** Confirm or cancel deployment, spell casting, ending the turn, or surrender.
 
 The rules layer supplies valid deployment cells and valid spell targets without changing the match. On confirmation, it checks the action again against the latest state. A valid action returns the next state; an invalid action returns a short error and leaves the state unchanged.
+
+## Matchmaking and Synchronization
+
+Convex stores each shared match in one game record containing both player slots, matchmaking status, and the complete deterministic match state.
+
+Starting the terminal creates a random token for that process and calls one matchmaking operation. It rejoins a current game for that token, otherwise joins the oldest waiting game, otherwise creates a waiting game as Player 1. When Player 2 joins, the game becomes active.
+
+Each terminal subscribes to its game and receives state changes reactively. A confirmed action is sent to one transactional backend operation. The backend verifies that the token belongs to the game, that the game is active, and that it is that player's turn before passing the action to the shared rules package. Only a valid resulting state is saved.
 
 ## Spell Resolution
 
@@ -68,4 +76,4 @@ Ending a turn changes the active player and increments the turn number. The new 
 
 ## Current Boundary
 
-The playable match runs entirely through the shared deterministic rules package and the local terminal client. Its fixed squads require no squad configuration or external service during play.
+The shared deterministic rules package remains the only source of game rules. Convex provides matchmaking, authoritative storage, action validation, and live synchronization; the terminal provides selection, confirmation, and presentation. No account system or persistent player identity is required for the current version.

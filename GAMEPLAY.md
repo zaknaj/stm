@@ -2,9 +2,11 @@
 
 This document describes the playable terminal version of *Slay the Monarch*. The rules are in [GAME.md](./GAME.md), and the current system structure is in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## Match Format
+## Matchmaking and Match Format
 
-The game is played locally by two players sharing one terminal. Player 1 is always shown below the board and Player 2 above it. The whole board and both squads remain visible during every turn.
+Each player starts the terminal game separately. The first available player joins the oldest waiting match or creates a new one, becoming Player 1. Their terminal waits until another player starts the game and joins as Player 2. The match then begins automatically and both terminals stay synchronized.
+
+Each terminal shows its assigned player. Player 1 is always below the board and Player 2 above it. The whole board and both squads remain visible during every turn, but a player can only perform gameplay actions on their own turn.
 
 Player 1 takes the first turn. The board begins empty, and each player's first action must deploy their monarch.
 

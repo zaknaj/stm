@@ -2,10 +2,12 @@
 
 import { createCliRenderer } from '@opentui/core';
 import { createRoot } from '@opentui/react';
-import { App } from './App.tsx';
+import { OnlineApp } from './OnlineApp.tsx';
 
 const renderer = await createCliRenderer({
 	exitOnCtrlC: true
 });
 
-createRoot(renderer).render(<App />);
+const convexUrl = process.env.PUBLIC_CONVEX_URL ?? process.env.CONVEX_URL;
+
+createRoot(renderer).render(<OnlineApp convexUrl={convexUrl} />);

@@ -1,10 +1,13 @@
 import { expect, test } from 'bun:test';
 import { TextAttributes } from '@opentui/core';
 import { testRender } from '@opentui/react/test-utils';
+import { createInitialMatch } from '@stm/game';
 import { act } from 'react';
-import { App } from './App.tsx';
+import { MatchApp } from './App.tsx';
 import { Board } from './components/Board.tsx';
 import { DEMO_UNITS } from './demoPosition.ts';
+
+const ignoreAction = async () => ({ ok: true as const, message: 'Done.' });
 
 test('renders the demo board with distinct player colors', async () => {
 	const setup = await testRender(<Board units={DEMO_UNITS} />, { height: 30, width: 80 });
@@ -36,7 +39,10 @@ test('renders the demo board with distinct player colors', async () => {
 });
 
 test('starts a playable match with fixed undeployed squads', async () => {
-	const setup = await testRender(<App />, { height: 30, width: 90 });
+	const setup = await testRender(
+		<MatchApp match={createInitialMatch()} localPlayer="player1" onAction={ignoreAction} />,
+		{ height: 30, width: 90 }
+	);
 
 	try {
 		await act(async () => {
@@ -46,7 +52,7 @@ test('starts a playable match with fixed undeployed squads', async () => {
 		expect(frame).toContain('SLAY THE MONARCH  Turn 1');
 		expect(frame).toContain('>P1 E1  1M 8/8@--  2R 4/4@--  3W 7/7@--  4S 5/5@--');
 		expect(frame).toContain('P2 E0  1M 8/8@--  2R 4/4@--  3W 7/7@--  4S 5/5@--');
-		expect(frame).toContain('P1: deploy your Monarch.');
+		expect(frame).toContain('Player 1 gains 1 energy.');
 	} finally {
 		await act(async () => {
 			setup.renderer.destroy();
@@ -55,7 +61,10 @@ test('starts a playable match with fixed undeployed squads', async () => {
 });
 
 test('selects the required Monarch and shows its deployment cells', async () => {
-	const setup = await testRender(<App />, { height: 30, width: 90 });
+	const setup = await testRender(
+		<MatchApp match={createInitialMatch()} localPlayer="player1" onAction={ignoreAction} />,
+		{ height: 30, width: 90 }
+	);
 
 	try {
 		await act(async () => {
@@ -122,7 +131,10 @@ test('coordinates the selected file and rank labels with a complete gold border'
 });
 
 test('copies the entire rendered board with Command-C', async () => {
-	const setup = await testRender(<App />, { height: 30, kittyKeyboard: true, width: 80 });
+	const setup = await testRender(
+		<MatchApp match={createInitialMatch()} localPlayer="player1" onAction={ignoreAction} />,
+		{ height: 30, kittyKeyboard: true, width: 80 }
+	);
 	let copiedText = '';
 	setup.renderer.copyToClipboardOSC52 = (text) => {
 		copiedText = text;
