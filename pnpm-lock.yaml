@@ -29,6 +29,13 @@ importers:
       react:
         specifier: ^19.2.8
         version: 19.2.8
+    optionalDependencies:
+      '@opentui/core-darwin-arm64':
+        specifier: 0.5.9
+        version: 0.5.9
+      '@opentui/core-darwin-x64':
+        specifier: 0.5.9
+        version: 0.5.9
 
   packages/game: {}
 
