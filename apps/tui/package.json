@@ -7,10 +7,9 @@
 		"stm": "./src/main.tsx"
 	},
 	"scripts": {
-		"start": "bun --env-file=../../.env.local run ./src/main.tsx",
-		"build": "bun build --compile ./src/main.tsx --outfile ./dist/stm",
-		"check": "tsc --noEmit",
-		"test": "bun test"
+		"start": "bun run ./src/main.tsx",
+		"build": "bun build --compile --no-compile-autoload-dotenv ./src/main.tsx --outfile ./dist/stm",
+		"build:release": "../../scripts/build-release.sh"
 	},
 	"dependencies": {
 		"@opentui/core": "^0.5.9",
@@ -18,10 +17,5 @@
 		"@stm/game": "workspace:*",
 		"convex": "^1.43.0",
 		"react": "^19.2.8"
-	},
-	"devDependencies": {
-		"@types/bun": "^1.4.0",
-		"@types/react": "^19.2.18",
-		"typescript": "^5.9.3"
 	}
 }

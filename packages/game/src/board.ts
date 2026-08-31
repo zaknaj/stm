@@ -16,9 +16,8 @@ export type BoardPosition = {
 };
 
 export type BoardUnit = {
-	id: string;
 	kind: UnitKind;
-	displayNumber?: 1 | 2 | 3 | 4 | 5;
+	hp: number;
 	position: BoardPosition;
 	side: UnitSide;
 };

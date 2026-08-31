@@ -11,3 +11,13 @@ Convex agent skills for common tasks can be installed by running
 `npx convex ai-files install`.
 
 <!-- convex-ai-end -->
+
+## Prototype mode
+
+Keep this project deliberately lean for a single-player MVP:
+
+- Implement only the current requested behavior.
+- Do not add tests, regression coverage, compatibility layers, migrations, feature flags, or abstractions for hypothetical future needs unless explicitly requested.
+- Prefer direct code and deletion over extensibility.
+- Remove code that becomes unused during a change.
+- Preserve the shelved multiplayer implementation unless explicitly asked to remove it.

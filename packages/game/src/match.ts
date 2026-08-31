@@ -10,7 +10,7 @@ import {
 
 export type PlayerId = 'player1' | 'player2';
 
-export type SpellEffect =
+type SpellEffect =
 	| { kind: 'damage'; amount: number; targeting: 'adjacent-enemy' | 'line-enemy' | 'radius-enemy'; range: number }
 	| { kind: 'heal'; amount: number; targeting: 'radius-ally'; range: number }
 	| { kind: 'move'; movement: 'teleport' | 'walk'; range: number };
@@ -23,14 +23,14 @@ export type SpellDefinition = {
 	effect: SpellEffect;
 };
 
-export type UnitDefinition = {
+type UnitDefinition = {
 	kind: UnitKind;
 	name: string;
 	maxHp: number;
 	spells: readonly SpellDefinition[];
 };
 
-export const UNIT_ORDER = ['monarch', 'ranger', 'warrior', 'sorcerer'] as const satisfies readonly UnitKind[];
+const UNIT_ORDER = ['monarch', 'ranger', 'warrior', 'sorcerer'] as const satisfies readonly UnitKind[];
 
 export const UNIT_DEFINITIONS: Readonly<Record<UnitKind, UnitDefinition>> = {
 	monarch: {
@@ -82,14 +82,14 @@ export type UnitState = {
 	cooldowns: Record<string, number>;
 };
 
-export type PlayerState = {
+type PlayerState = {
 	id: PlayerId;
 	name: string;
 	energy: number;
 	turnsStarted: number;
 };
 
-export type MatchStatus =
+type MatchStatus =
 	| { kind: 'active' }
 	| { kind: 'won'; winner: PlayerId; reason: 'monarch' | 'surrender' };
 
@@ -102,7 +102,7 @@ export type MatchState = {
 	log: string[];
 };
 
-export type MatchResult =
+type MatchResult =
 	| { ok: true; state: MatchState }
 	| { ok: false; error: string };
 
@@ -194,7 +194,7 @@ export function createInitialMatch(): MatchState {
 	return state;
 }
 
-export function otherPlayer(player: PlayerId): PlayerId {
+function otherPlayer(player: PlayerId): PlayerId {
 	return player === 'player1' ? 'player2' : 'player1';
 }
 
@@ -244,7 +244,7 @@ function activeActionError(state: MatchState, player: PlayerId): string | null {
 	return null;
 }
 
-export function deployUnit(state: MatchState, unitId: string, position: BoardPosition): MatchResult {
+function deployUnit(state: MatchState, unitId: string, position: BoardPosition): MatchResult {
 	const unit = getUnit(state, unitId);
 	if (!unit) return { ok: false, error: 'Unit not found.' };
 	const actionError = activeActionError(state, unit.controller);
@@ -299,6 +299,56 @@ function teleportTargets(state: MatchState, origin: BoardPosition, range: number
 		}
 	}
 	return targets;
+}
+
+function positionsInRange(
+	origin: BoardPosition,
+	predicate: (position: BoardPosition) => boolean,
+	includeOrigin = false
+): BoardPosition[] {
+	const positions: BoardPosition[] = [];
+	for (let rank = 0; rank < BOARD_SIZE; rank += 1) {
+		for (let file = 0; file < BOARD_SIZE; file += 1) {
+			const position = { file, rank };
+			if ((includeOrigin || !positionsEqual(origin, position)) && predicate(position)) positions.push(position);
+		}
+	}
+	return positions;
+}
+
+/** The geometric spell range, before occupancy, resources, cooldowns, and target validity. */
+export function getSpellRange(state: MatchState, unitId: string, spellId: string): BoardPosition[] {
+	const caster = getUnit(state, unitId);
+	if (!caster?.position || caster.hp <= 0) return [];
+	const spell = getSpell(caster, spellId);
+	if (!spell) return [];
+	const origin = caster.position;
+	const effect = spell.effect;
+
+	if (effect.kind === 'move' && effect.movement === 'walk') {
+		return positionsInRange(
+			origin,
+			(position) =>
+				Math.abs(position.file - origin.file) + Math.abs(position.rank - origin.rank) <= effect.range
+		);
+	}
+
+	if (effect.kind === 'damage' && effect.targeting === 'line-enemy') {
+		return positionsInRange(origin, (position) => {
+			const fileDelta = Math.abs(position.file - origin.file);
+			const rankDelta = Math.abs(position.rank - origin.rank);
+			return (
+				Math.max(fileDelta, rankDelta) <= effect.range &&
+				(fileDelta === 0 || rankDelta === 0 || fileDelta === rankDelta)
+			);
+		});
+	}
+
+	return positionsInRange(
+		origin,
+		(position) => chebyshevDistance(origin, position) <= effect.range,
+		effect.kind === 'heal'
+	);
 }
 
 function isClearLine(state: MatchState, origin: BoardPosition, target: BoardPosition): boolean {
@@ -384,7 +434,7 @@ export function getValidSpellTargets(state: MatchState, unitId: string, spellId:
 	return targetUnits(state, caster, (position) => chebyshevDistance(origin, position) <= effect.range, false);
 }
 
-export function castSpell(
+function castSpell(
 	state: MatchState,
 	unitId: string,
 	spellId: string,
@@ -442,7 +492,7 @@ export function canEndTurn(state: MatchState): boolean {
 	return Boolean(monarch?.position && monarch.hp > 0);
 }
 
-export function endTurn(state: MatchState): MatchResult {
+function endTurn(state: MatchState): MatchResult {
 	if (state.status.kind !== 'active') return { ok: false, error: 'The match is over.' };
 	if (!canEndTurn(state)) return { ok: false, error: 'Deploy your monarch before ending the turn.' };
 	const next = cloneMatch(state);
@@ -452,7 +502,7 @@ export function endTurn(state: MatchState): MatchResult {
 	return { ok: true, state: next };
 }
 
-export function surrender(state: MatchState, player: PlayerId): MatchResult {
+function surrender(state: MatchState, player: PlayerId): MatchResult {
 	const actionError = activeActionError(state, player);
 	if (actionError) return { ok: false, error: actionError };
 	const next = cloneMatch(state);

@@ -18,9 +18,10 @@ type Identity = {
 
 type OnlineAppProps = {
 	convexUrl?: string;
+	playerToken: string;
 };
 
-export function OnlineApp({ convexUrl }: OnlineAppProps) {
+export function OnlineApp({ convexUrl, playerToken }: OnlineAppProps) {
 	const renderer = useRenderer();
 	const client = useMemo(() => (convexUrl ? new ConvexClient(convexUrl) : null), [convexUrl]);
 	const [attempt, setAttempt] = useState(0);
@@ -44,8 +45,6 @@ export function OnlineApp({ convexUrl }: OnlineAppProps) {
 		if (!client) return;
 		let stopped = false;
 		let unsubscribe: (() => void) | undefined;
-		const playerToken = crypto.randomUUID();
-
 		setIdentity(null);
 		setSession(null);
 		setError(null);
@@ -78,7 +77,7 @@ export function OnlineApp({ convexUrl }: OnlineAppProps) {
 			stopped = true;
 			unsubscribe?.();
 		};
-	}, [attempt, client]);
+	}, [attempt, client, playerToken]);
 
 	async function sendAction(action: MatchAction) {
 		if (!client || !identity) return { ok: false as const, error: 'Not connected to a game.' };

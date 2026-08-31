@@ -6,26 +6,11 @@
 	"packageManager": "pnpm@10.2.1",
 	"scripts": {
 		"stm": "pnpm --filter @stm/tui start",
-		"dev:tui": "pnpm --filter @stm/tui start",
-		"dev:web": "pnpm --filter @stm/web dev",
 		"dev:backend": "convex dev",
-		"build": "pnpm --recursive --if-present build",
-		"check": "pnpm --recursive --if-present check && tsc --noEmit -p convex/tsconfig.json",
-		"test": "pnpm --recursive --if-present test && vitest run"
-	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"esbuild"
-		]
+		"build": "pnpm --filter @stm/tui build",
+		"build:release": "pnpm --filter @stm/tui build:release"
 	},
 	"dependencies": {
 		"convex": "^1.43.0"
-	},
-	"devDependencies": {
-		"@edge-runtime/vm": "^5.0.0",
-		"convex-test": "^0.0.56",
-		"typescript": "^6.0.3",
-		"vite": "^6.4.3",
-		"vitest": "^4.1.11"
 	}
 }

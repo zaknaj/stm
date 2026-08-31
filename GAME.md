@@ -1,6 +1,6 @@
 # Slay the Monarch
 
-The exact match flow and controls are described in [GAMEPLAY.md](./GAMEPLAY.md). The current game-system structure is described in [ARCHITECTURE.md](./ARCHITECTURE.md).
+The current terminal playtest is online multiplayer. Two players connect through the shared Convex deployment and take alternating turns.
 
 ## Overview
 
@@ -37,7 +37,7 @@ Each player's first action must deploy their monarch. They cannot take another a
 
 ## Turns and Energy
 
-Players alternate turns, beginning with Player 1. Both players start with 0 energy and gain energy at the start of their turns according to the schedule in [GAMEPLAY.md](./GAMEPLAY.md). Unspent energy carries over without a cap.
+Players alternate turns. Player 1 starts with 1 energy, gains 2 on their second turn, and gains 3 on every later turn. Player 2 starts with 2 energy and gains 3 on every later turn. Unspent energy carries over without a cap.
 
 Energy belongs to the player and is shared by their squad. Deployment and every spell cost 1 energy. Movement is performed by spells and also costs 1 energy.
 
@@ -77,4 +77,4 @@ Blink ignores cells between its origin and destination. Shot travels horizontall
 
 The complete game state is visible and combat has no randomness. Both players can see unit positions, HP, energy, and cooldowns.
 
-Choosing cells and browsing units does not change the match. Deployment, spells, ending the turn, and surrender must be confirmed before they take effect.
+Choosing cells and browsing units does not change the match. Deployment and spells take effect when Enter is pressed on a valid cell; ending the turn takes effect immediately, while surrender requires confirmation.
