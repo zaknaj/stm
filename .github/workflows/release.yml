@@ -19,7 +19,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.8
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --force --frozen-lockfile
       - run: ./scripts/build-release.sh
       - name: Prepare installer
         run: sed "s|__GITHUB_REPOSITORY__|$GITHUB_REPOSITORY|g" scripts/install.sh > apps/tui/dist/release/install.sh
