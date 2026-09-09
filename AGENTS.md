@@ -20,4 +20,3 @@ Keep this project deliberately lean for a single-player MVP:
 - Do not add tests, regression coverage, compatibility layers, migrations, feature flags, or abstractions for hypothetical future needs unless explicitly requested.
 - Prefer direct code and deletion over extensibility.
 - Remove code that becomes unused during a change.
-- Preserve the shelved multiplayer implementation unless explicitly asked to remove it.

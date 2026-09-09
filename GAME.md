@@ -1,80 +1,137 @@
-# Slay the Monarch
-
-The current terminal playtest is online multiplayer. Two players connect through the shared Convex deployment and take alternating turns.
+# Game Rules and Systems
 
 ## Overview
 
-*Slay the Monarch* is a deterministic, turn-based strategy game for two players on an 8×8 board. Each player commands four units. The goal is to kill the enemy monarch.
+The game is a competitive 1v1 turn-based tactics game played on a 7×7 square grid.
 
-The game uses small numbers, short spell descriptions, and simple rules whose combinations create the strategy. It is inspired by *Into the Breach*, *Slay the Spire*, *The Battle of Polytopia*, and chess-like positional play.
+Each player builds a squad before the match using a fixed budget. Units and Monarchs have different squad costs. Squad size is flexible, and duplicate classes are allowed.
 
-## Winning
+The goal is to kill the opposing Monarch.
 
-A player wins immediately when the enemy monarch reaches 0 HP. Operations resolve in order, and the first monarch to die ends the match.
+The game has no randomness and no hidden information.
 
-A player may also surrender. There are no draws, stalemates, turn limits, or timers.
+## Squad and Deployment
 
-## Board and Units
+Each squad contains:
 
-Each cell can hold at most one unit. A unit at 0 HP dies and is removed from the board.
+* One Monarch.
+* Any number of other units within the squad budget.
+* A fixed starting deployment.
 
-Each player has the same fixed squad:
+Players place their units within the two rows closest to their side.
 
-| Unit | HP | Spells |
-| --- | ---: | --- |
-| Monarch | 8 | Step, Strike |
-| Ranger | 4 | Stride, Shot |
-| Warrior | 7 | Step, Slash |
-| Sorcerer | 5 | Blink, Bolt, Mend |
+The board starts empty except for the players' units.
 
-There is currently no squad building. All units and spells are predefined.
+Both players can see the complete starting board before the match begins.
 
-## Deployment
+The first player is chosen randomly.
 
-The board starts empty. Units are deployed during normal turns, one at a time. Deployment costs 1 energy and places the unit on an empty cell in its player's nearest two rows.
+## Turns
 
-Each player's first action must deploy their monarch. They cannot take another action or end their turn until they do. A newly deployed unit may act immediately.
+Players alternate full turns.
 
-## Turns and Energy
+During a turn:
 
-Players alternate turns. Player 1 starts with 1 energy, gains 2 on their second turn, and gains 3 on every later turn. Player 2 starts with 2 energy and gains 3 on every later turn. Unspent energy carries over without a cap.
+* Units can act in any order.
+* A unit can act multiple times if its spells allow it.
+* The player can end the turn at any time.
+* The opponent cannot act or react during the turn.
 
-Energy belongs to the player and is shared by their squad. Deployment and every spell cost 1 energy. Movement is performed by spells and also costs 1 energy.
+## Spells
 
-During a turn, the player may use their units in any order. A unit may act more than once if the player has enough energy and its chosen spell is ready. The player decides when to end the turn.
+Everything a unit can do is represented as a spell, including movement.
 
-## Spells and Cooldowns
+Spells can:
 
-All spells begin ready. After a spell is cast, its cooldown is set to the listed value. At the start of the owning player's turns, each positive cooldown decreases by 1.
+* Move units.
+* Deal damage or heal.
+* Apply or remove effects.
+* Affect board cells.
+* Summon entities.
+* Modify other game properties.
 
-- **CD 0:** Can be used repeatedly, including in the same turn.
-- **CD 1:** Becomes ready on the unit's next turn.
-- **CD 2 or more:** Remains unavailable for additional turns.
+Spells can use range, line of sight, targeting rules, and cooldowns.
 
-Every spell selects one destination or target cell and resolves one effect:
+Active spells normally cost 1 energy.
 
-| Unit | Spell | CD | Effect |
-| --- | --- | ---: | --- |
-| Monarch | Step | 0 | Move 1 cell. |
-| Monarch | Strike | 1 | Deal 2 damage to an adjacent enemy. |
-| Ranger | Stride | 1 | Move up to 2 cells. |
-| Ranger | Shot | 0 | Deal 2 damage to an enemy up to 4 cells away in a clear straight or diagonal line. |
-| Warrior | Step | 0 | Move 1 cell. |
-| Warrior | Slash | 1 | Deal 3 damage to an adjacent enemy. |
-| Sorcerer | Blink | 2 | Teleport to an empty cell up to 2 cells away. |
-| Sorcerer | Bolt | 1 | Deal 2 damage to an enemy within 2 cells. |
-| Sorcerer | Mend | 3 | Restore up to 2 HP to a damaged ally within 2 cells, including the caster. |
+Passive spells do not require activation or energy.
 
-## Spatial Rules
+## Monarch Customization
 
-Step and Stride use orthogonal movement. They cannot move through occupied cells, and their destination must be empty.
+Monarchs have class-specific spells and additional slots for **common spells**.
 
-Adjacency and “within” ranges use the larger of the horizontal and vertical distances, so diagonal cells count at the same distance as orthogonal cells.
+Common spells are selected from a shared pool during squad creation.
 
-Blink ignores cells between its origin and destination. Shot travels horizontally, vertically, or diagonally, and any intervening unit blocks it.
+They can be active or passive.
 
-## Information and Commitment
+Common spells also use the squad budget.
 
-The complete game state is visible and combat has no randomness. Both players can see unit positions, HP, energy, and cooldowns.
+## Energy
 
-Choosing cells and browsing units does not change the match. Deployment and spells take effect when Enter is pressed on a valid cell; ending the turn takes effect immediately, while surrender requires confirmation.
+Energy is shared by the entire squad.
+
+Each player receives a fixed amount of energy each turn.
+
+Unused energy carries over between turns.
+
+There is no energy storage limit.
+
+## Units
+
+Units can have:
+
+* HP.
+* Shields.
+* Active spells.
+* Passive spells.
+* Buffs, debuffs, and other effects.
+
+Only one unit can occupy a cell.
+
+A unit is removed when its HP reaches zero.
+
+If the Monarch dies, the match ends immediately.
+
+## Effects
+
+Effects are a core game system.
+
+Effects can exist on units or board cells and can persist across turns.
+
+They can modify units, spells, movement, energy, cooldowns, or other game properties.
+
+Effects can trigger at defined moments such as the start or end of a turn.
+
+Effects generally stack by duration rather than strength.
+
+## Summons
+
+Spells can summon entities onto the board.
+
+Summons can behave like normal units or static objects.
+
+They can have HP, active spells, passive spells, or no abilities.
+
+## Information and Determinism
+
+All game information is visible to both players.
+
+Players can inspect units, spells, cooldowns, effects, HP, shields, energy, and board state.
+
+There are no random outcomes or hidden information.
+
+Every action has a deterministic result.
+
+## Core Strategy
+
+The game is built around:
+
+* Squad construction.
+* Starting deployment.
+* Board positioning.
+* Energy management.
+* Cooldown management.
+* Spell sequencing.
+* Unit synergy.
+* Predicting the opponent.
+* Creating opportunities to kill the enemy Monarch.

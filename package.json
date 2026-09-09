@@ -1,16 +1,27 @@
 {
-	"name": "stm",
-	"private": true,
-	"version": "0.0.1",
-	"type": "module",
-	"packageManager": "pnpm@10.2.1",
-	"scripts": {
-		"stm": "pnpm --filter @stm/tui start",
-		"dev:backend": "convex dev",
-		"build": "pnpm --filter @stm/tui build",
-		"build:release": "pnpm --filter @stm/tui build:release"
-	},
-	"dependencies": {
-		"convex": "^1.43.0"
-	}
+  "name": "stm",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@10.2.1",
+  "scripts": {
+    "dev": "vite",
+    "dev:backend": "convex dev",
+    "check": "tsc --noEmit",
+    "build": "pnpm check && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "convex": "^1.43.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  }
 }

@@ -8,19 +8,13 @@
  * @module
  */
 
-import type * as gameValidators from "../gameValidators.js";
-import type * as games from "../games.js";
-
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{
-  gameValidators: typeof gameValidators;
-  games: typeof games;
-}>;
+declare const fullApi: ApiFromModules<{}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
