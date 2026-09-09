@@ -1,6 +1,6 @@
 # Slay the Monarch
 
-A blank web app using React, TypeScript, Vite, Convex, and pnpm.
+A blank web app using Svelte, TypeScript, Vite, Convex, and pnpm.
 
 ## Development
 
@@ -9,8 +9,8 @@ pnpm install
 pnpm dev
 ```
 
-The page is intentionally blank. The React entry point is `src/main.tsx`,
-and `src/App.tsx` is ready for the web game.
+The page is intentionally blank. The Svelte entry point is `src/main.ts`,
+and `src/App.svelte` is ready for the web game.
 
 ## Backend
 
